@@ -3,12 +3,9 @@ import { useState } from "react";
 
 const p = 10;
 
-enum GROUP {
-  START = 'start',
-  MIDDLE = 'middle',
+enum SPLIT {
   MIDDLE_START = 'middle-start',
   MIDDLE_END = 'middle-end',
-  END = 'end'
 }
 
 function nearestLowerMultipleOfTen(number: number) {
@@ -19,10 +16,10 @@ function nearestHigherMultipleOfTen(number: number) {
   return Math.ceil(number / 10) * 10;
 }
 
-const Button = (pageNumber: number, group: GROUP) => {
+const Button = (pageNumber: number, split: SPLIT) => {
   return {
     pageNumber,
-    group
+    split
   };
 };
 
@@ -30,35 +27,34 @@ const Pagination = ({ totalPages }: { totalPages: number }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const calculateButtons = (currentPage: number, totalPages: number) => {
-    const buttonsMap = new Map<number, { pageNumber: number; group: GROUP }>();
+    const buttonsMap = new Map<number, { pageNumber: number; split: SPLIT }>();
 
-    const addButton = (pageNumber: number, group: GROUP) => {
+    const addButton = (pageNumber: number, split?: SPLIT) => {
       if (!buttonsMap.has(pageNumber)) {
-        buttonsMap.set(pageNumber, Button(pageNumber, group));
+        buttonsMap.set(pageNumber, Button(pageNumber, split!));
       }
     };
 
-    addButton(1, GROUP.START);
-    addButton(totalPages, GROUP.END);
+    addButton(1);
+    addButton(totalPages)
+    if (currentPage > 2) addButton(currentPage - 2, SPLIT.MIDDLE_START);
+    if (currentPage > 1) addButton(currentPage - 1);
 
-    if (currentPage > 2) addButton(currentPage - 2, GROUP.MIDDLE_START);
-    if (currentPage > 1) addButton(currentPage - 1, GROUP.MIDDLE);
+    addButton(currentPage);
 
-    addButton(currentPage, GROUP.MIDDLE);
-
-    if (currentPage < totalPages) addButton(currentPage + 1, GROUP.MIDDLE);
-    if (currentPage < totalPages - 1) addButton(currentPage + 2, GROUP.MIDDLE_END);
+    if (currentPage < totalPages) addButton(currentPage + 1);
+    if (currentPage < totalPages - 1) addButton(currentPage + 2, SPLIT.MIDDLE_END);
 
     const lowerAcc = nearestLowerMultipleOfTen(currentPage - p);
     const lowerAccSquared = nearestLowerMultipleOfTen(currentPage - p * p);
     const higherAcc = nearestHigherMultipleOfTen(currentPage + p);
     const higherAccSquared = nearestHigherMultipleOfTen(currentPage + p * p);
 
-    if (lowerAcc >= 1) addButton(lowerAcc, GROUP.START);
-    if (lowerAccSquared >= 1) addButton(lowerAccSquared, GROUP.START);
+    if (lowerAcc >= 1) addButton(lowerAcc);
+    if (lowerAccSquared >= 1) addButton(lowerAccSquared);
 
-    if (higherAcc <= totalPages) addButton(higherAcc, GROUP.END);
-    if (higherAccSquared <= totalPages) addButton(higherAccSquared, GROUP.END);
+    if (higherAcc <= totalPages) addButton(higherAcc);
+    if (higherAccSquared <= totalPages) addButton(higherAccSquared);
 
     return Array.from(buttonsMap.values())
       .sort((a, b) => a.pageNumber - b.pageNumber)
@@ -75,7 +71,7 @@ const Pagination = ({ totalPages }: { totalPages: number }) => {
     return buttons.map((b) => {
       console.log(b);
 
-      if (b.group === GROUP.MIDDLE_START) {
+      if (b.split === SPLIT.MIDDLE_START) {
         return <>
           <span>...</span>
           <button
@@ -86,7 +82,7 @@ const Pagination = ({ totalPages }: { totalPages: number }) => {
             {b.pageNumber}
           </button>
         </>
-      } else if (b.group === GROUP.MIDDLE_END) {
+      } else if (b.split === SPLIT.MIDDLE_END) {
         return <>
           <button
             key={b.pageNumber}
